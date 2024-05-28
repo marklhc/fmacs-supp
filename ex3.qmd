@@ -1,6 +1,5 @@
 ---
 title: "Illustrative Example (Lui., 2019) with Categorical Data"
-author: "Mark Lai"
 date: "2024-03-12"
 format: gfm
 ---

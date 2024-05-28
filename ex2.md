@@ -1,6 +1,5 @@
 # Example 2: Computing Effect Sizes for Noninvariance With Multiple
 Grouping Variables
-Yichi Zhang, Mark Lai
 
 ## Load Data
 

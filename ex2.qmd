@@ -1,7 +1,5 @@
 ---
 title: "Example 2: Computing Effect Sizes for Noninvariance With Multiple Grouping Variables"
-author: "Yichi Zhang, Mark Lai"
-bibliography: ../manuscript/references.yaml
 format: gfm
 ---
 
@@ -70,7 +68,7 @@ if (!file.exists(config_path)) {
 }
 ```
 
-Forward search [similar to @yoon2007]
+Forward search (similar to Yoon & Millsap, 2007)
 
 ```{r}
 #| echo: true

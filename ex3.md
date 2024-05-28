@@ -1,5 +1,4 @@
 # Illustrative Example (Lui., 2019) with Categorical Data
-Mark Lai
 2024-03-12
 
 This is the same example as [ex2.qmd](ex2.qmd), but with the items
