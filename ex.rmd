@@ -1,0 +1,131 @@
+---
+title: "Example 1: $f_\text{MACS}$ Effect Size with Alignment Optimization"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## GitHub Documents
+
+This is an R Markdown format used for publishing markdown documents to GitHub. When you click the **Knit** button all R code chunks are run and a markdown file (.md) suitable for publishing to GitHub is generated.
+
+## Load Packages
+
+```{r}
+library(readr)
+library(here)
+library(sirt)
+library(lavaan)
+library(pinsearch)
+```
+
+## Import Data
+
+```{r}
+# Analyses from Asparouhov & Muthen (2014); data from https://www.statmodel.com/Alignment.shtml
+traco_dat <- readr::read_delim(
+    here::here("analysis", "webnote18data", "ess05Traco.dat"),
+    col_names = c(
+        "country", "essround", "ipfrule", "ipmodst",
+        "ipbhprp", "imptrad"
+    )
+)
+# Recode missing data
+traco_dat[3:6] <- lapply(traco_dat[3:6],
+    FUN = \(x, list = 7:9) { x[x %in% list] <- NA; x }
+)
+```
+
+## Descriptive Statistics
+
+```{r}
+library(modelsummary)
+traco_dat |>
+    datasummary(
+        formula = Factor(country) ~ (ipfrule + ipmodst + ipbhprp + imptrad) *
+            (N + Mean + SD)
+    )
+```
+
+Cross-Tabulation
+
+```{r}
+with(traco_dat, table(country, ipfrule, useNA = "ifany"))
+with(traco_dat, table(country, ipmodst, useNA = "ifany"))
+with(traco_dat, table(country, ipbhprp, useNA = "ifany"))
+with(traco_dat, table(country, imptrad, useNA = "ifany"))
+```
+
+## Alignment
+
+```{r}
+config_res <- sirt::invariance_alignment_cfa_config(
+    traco_dat[c("ipmodst", "imptrad", "ipfrule", "ipbhprp")],
+    group = traco_dat$country, missing = "ML"
+)
+# Fit
+config_fit <- lavaan::cfa(
+    " f =~ ipmodst + imptrad + ipfrule + ipbhprp ",
+    data = traco_dat, group = "country", std.lv = TRUE,
+    missing = "ML"
+)
+# Correct N by item
+real_n <-
+    apply(!is.na(traco_dat[c("ipmodst", "imptrad", "ipfrule", "ipbhprp")]),
+          MARGIN = 2,
+          FUN = \(x) tapply(x, traco_dat$country, FUN = sum))
+aligned_res <- invariance.alignment(
+    config_res$lambda,
+    nu = config_res$nu,
+    wgt = matrix(sqrt(real_n),
+                 nrow = config_res$G,
+                 ncol = config_res$I)
+)
+# Aligned loadings
+aligned_res$lambda.aligned |> round(digits = 4)
+# Aligned intercepts
+aligned_res$nu.aligned |> round(digits = 4)
+# Uniqueness (unique variances)
+lavInspect(config_fit, what = "est") |>
+    vapply(FUN = \(x) diag(x$theta), FUN.VALUE = numeric(4)) |>
+    t() |>
+    round(digits = 4)
+aligned_res$es.invariance
+```
+
+```{r}
+# fmacs
+compute_pvar <- function(x, g, na.rm = TRUE) {
+    mean((x - ave(x, g, FUN = \(xx) mean(xx, na.rm = na.rm)))^2,
+         na.rm = na.rm)
+}
+pvar <- apply(
+    traco_dat[c("ipmodst", "imptrad", "ipfrule", "ipbhprp")],
+    MARGIN = 2,
+    FUN = compute_pvar,
+    g = traco_dat$country
+)
+pinsearch::fmacs(
+    aligned_res$nu.aligned,
+    loadings = aligned_res$lambda.aligned,
+    pooled_item_sd = sqrt(pvar),
+    num_obs = real_n
+)
+pinsearch::fmacs(
+    aligned_res$nu.aligned,
+    loadings = aligned_res$lambda.aligned,
+    pooled_item_sd = sqrt(pvar),
+    num_obs = real_n,
+    group_factor = rep(0:1, each = 13)
+)
+# Mplus loading R2: 0.248, 0.615, 0.280, 0.954
+# Mplus intercept R2: 0.176, 0.000, 0.414, 0.750
+```
+
+```{r}
+# Save results
+saveRDS(config_fit, file = "traco_config_fit.rds")
+saveRDS(aligned_res, file = "traco_aligned_res.rds")
+```
