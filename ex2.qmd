@@ -1,5 +1,7 @@
 ---
 title: "Example 2: Computing Effect Sizes for Noninvariance With Multiple Grouping Variables"
+date: last-modified
+bibliography: ../manuscript/references.yaml
 format: gfm
 ---
 
@@ -17,7 +19,7 @@ library(pinsearch)
 
 ```{r}
 orig_dat <- haven::read_sav(
-    here::here("analysis", "LUI2018_class4mplus.sav")
+    here::here("LUI2018_class4mplus.sav")
 )
 dat <- orig_dat |>
     filter(eth %in% c(1, 2, 4), gender %in% 1:2) |>
@@ -62,13 +64,13 @@ anova(config_fit, config_fit2)
 
 ```{r}
 #| include: false
-config_path <- here::here("analysis", "ex2_config.rds")
+config_path <- here::here("ex2_config.rds")
 if (!file.exists(config_path)) {
     saveRDS(config_fit2, config_path)
 }
 ```
 
-Forward search (similar to Yoon & Millsap, 2007)
+Forward search [similar to @yoon2007]
 
 ```{r}
 #| echo: true
@@ -80,7 +82,7 @@ ps <- pinSearch(paste0(config_mod, "\nclass1 ~~ class2"), data = dat,
 
 ```{r}
 #| include: false
-ps_path <- here::here("analysis", "ex2_ps.rds")
+ps_path <- here::here("ex2_ps.rds")
 if (!file.exists(ps_path)) {
     ps <- pinSearch(paste0(config_mod, "\nclass1 ~~ class2"), data = dat,
                 group = "group", estimator = "MLR", missing = "fiml",
@@ -149,8 +151,91 @@ contr <- local({
 (f_int <- pin_effsize(ps[[1]], contrast = contr[, 5:6, drop = FALSE]))
 ```
 
+Bootstrapping
+
+```{r}
+fmacs_est <- c(f_omni, f_gender, f_eth, f_int)
+```
+
+```{r}
+#| echo: true
+#| eval: !expr '!file.exists("ex2_ps_boot.rds")'
+ps_refit <- lavaan(parTable(ps[[1]]),
+    data = dat, group = "group", estimator = "MLR",
+    missing = "fiml"
+)
+ps_boot <- bootstrapLavaan(ps_refit,
+    R = 200,
+    FUN = \(x) c(
+        pin_effsize(x),
+        pin_effsize(x, group_factor = c(1, 1, 1, 2, 2, 2)),
+        pin_effsize(x, group_factor = c(1, 2, 3, 1, 2, 3)),
+        pin_effsize(x, contrast = contr[, 5:6, drop = FALSE])
+    )
+)
+saveRDS(ps_boot, here::here("ex2_ps_boot.rds"))
+```
+
+```{r}
+#| include: false
+ps_boot <- readRDS(here::here("ex2_ps_boot.rds"))
+```
+
+```{r}
+fmacs_boot <- structure(list(
+    t0 = fmacs_est,
+    t = ps_boot,
+    R = 200, class = "boot"
+))
+# Bias
+fmacs_bias <- colMeans(fmacs_boot$t, na.rm = TRUE) - fmacs_est
+# Bias corrected fMACS
+fmacs_est_bc <- pmax(0, fmacs_est - fmacs_bias)
+# 95% Percentile CI
+# Loop over indices
+fmacs_boot_ci <- lapply(seq_len(ncol(fmacs_boot$t)), \(x) {
+    boot_ci <- boot::boot.ci(
+        fmacs_boot,
+        type = c("norm", "basic", "perc"), index = x
+    )
+    list(
+        norm = boot_ci$norm[2:3],
+        basic = boot_ci$basic[4:5], perc = boot_ci$perc[4:5]
+    )
+})
+```
+
 ```{r}
 #| label: tbl-fmacs-ex2
+f_omni_ci <- vapply(fmacs_boot_ci[1:8],
+    FUN = \(x) paste0(
+        "[", round(x$perc[1], 2), ", ",
+        round(x$perc[2], 2), "]"
+    ),
+    FUN.VALUE = character(1)
+)
+f_gender_ci <- vapply(fmacs_boot_ci[9:16],
+    FUN = \(x) paste0(
+        "[", round(x$perc[1], 2), ", ",
+        round(x$perc[2], 2), "]"
+    ),
+    FUN.VALUE = character(1)
+)
+f_eth_ci <- vapply(fmacs_boot_ci[17:24],
+    FUN = \(x) paste0(
+        "[", round(x$perc[1], 2), ", ",
+        round(x$perc[2], 2), "]"
+    ),
+    FUN.VALUE = character(1)
+)
+f_int_ci <- vapply(fmacs_boot_ci[25:32],
+    FUN = \(x) paste0(
+        "[", round(x$perc[1], 2), ", ",
+        round(x$perc[2], 2), "]"
+    ),
+    FUN.VALUE = character(1)
+)
+# Helper for formatting numbers
 # Render as table
 item_names <- gsub("class", replacement = "Item ", colnames(f_omni)) |>
     gsub(pattern = "-f1", replacement = "")
@@ -161,4 +246,46 @@ t(rbind(f_omni, f_gender, f_eth, f_int)) |>
         c("Overall", "Gender", "Ethnicity", "Gender x Ethnicity")
     )) |>
     knitr::kable(digits = 2, caption = "$f_\\text{MACS}$ effect sizes")
+```
+
+### Test-level effect sizes
+
+```{r}
+pin_effsize(ps[[1]], item_weights = rep(1, 15))
+```
+
+```{r}
+#| echo: true
+#| eval: !expr '!file.exists("ex2_pstest_boot.rds")'
+# Bootstrap
+pstest_boot <- bootstrapLavaan(ps_refit,
+    R = 200,
+    FUN = \(x) c(
+        pin_effsize(x, item_weights = rep(1, 15))
+    )
+)
+saveRDS(pstest_boot, here::here("ex2_pstest_boot.rds"))
+```
+
+```{r}
+#| include: false
+pstest_boot <- readRDS(here::here("ex2_pstest_boot.rds"))
+```
+
+```{r}
+fmacstest_est <- pin_effsize(ps[[1]], item_weights = rep(1, 15))
+fmacstest_boot <- structure(list(
+    t0 = fmacstest_est,
+    t = pstest_boot,
+    R = 200, class = "boot"
+))
+# Bias
+fmacstest_bias <- colMeans(fmacstest_boot$t, na.rm = TRUE) - fmacstest_est
+# Bias corrected fMACS
+fmacstest_est_bc <- pmax(0, fmacstest_est - fmacstest_bias)
+# 95% Percentile CI
+boot::boot.ci(
+        fmacstest_boot,
+        type = c("norm", "basic", "perc")
+    )
 ```

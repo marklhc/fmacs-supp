@@ -1,6 +1,6 @@
 ---
 title: "Illustrative Example (Lui., 2019) with Categorical Data"
-date: "2024-03-12"
+date: last-modified
 format: gfm
 ---
 
@@ -18,7 +18,7 @@ This is the same example as [ex2.qmd](ex2.qmd), but with the items treated as ca
 
 ```{r}
 orig_dat <- haven::read_sav(
-    here::here("analysis", "LUI2018_class4mplus.sav")
+    here::here("LUI2018_class4mplus.sav")
 )
 dat <- orig_dat |>
     filter(eth %in% c(1, 2, 4)) |>
@@ -48,10 +48,17 @@ Forward search and effect size
 ```{r}
 #| echo: true
 #| cache: true
-pinSearch(paste0(config_mod, "\nclass1 ~~ class2"),
+ps1 <- pinSearch(paste0(config_mod, "\nclass1 ~~ class2"),
     data = dat,
     group = "eth", ordered = TRUE,
     type = "residual.covariances",
     effect_size = TRUE
 )
+ps1
+```
+
+```{r}
+#| echo: true
+# Test-level effect size
+pin_effsize(ps1[[1]], item_weights = rep(1, 15))
 ```
