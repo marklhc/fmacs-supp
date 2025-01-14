@@ -2,16 +2,10 @@ library(SimDesign)
 library(lavaan)
 library(pinsearch)
 
-# TODO:
-#   - Increase the number of replications to 500
-#   - Summarize the pattern of bias
-
 # Define conditions
 design <- createDesign(
     n = c(100, 250, 1000)
 )
-
-# Fixed objects
 set.seed(1855)
 # Helper
 get_ucov <- function(p, scale = sqrt(0.1), n = 5) {
@@ -20,6 +14,7 @@ get_ucov <- function(p, scale = sqrt(0.1), n = 5) {
     D <- diag(1 / sqrt(diag(WtW))) * scale
     D %*% WtW %*% D
 }
+# Fixed objects
 fixed <- list(
     p = 6,
     lambda = c(.3, .7, .4, .5, .6, .4) + .3,
@@ -60,7 +55,6 @@ fixed <- within(fixed, {
                     lam = lambdag, al = alpha,
                     SIMPLIFY = FALSE)
 })
-
 # Population effect size
 fixed$fmacs_pop <- local({
     pooled_sd <- lapply(1:2, FUN = \(j) {
@@ -72,7 +66,6 @@ fixed$fmacs_pop <- local({
             mean() |>
             sqrt()
     })
-
     fmacs_ordered(
         thresholds = do.call(rbind, fixed$taug) |>
             `colnames<-`(1:6),
@@ -82,7 +75,6 @@ fixed$fmacs_pop <- local({
         pooled_item_sd = unlist(pooled_sd)
     )[1:2]
 })
-
 # Function for data generation
 # sim_y <- function(n, lambda, nu, alpha, psi, Theta) {
 #     covy <- tcrossprod(lambda) * psi + Theta
@@ -106,7 +98,6 @@ generate <- function(condition, fixed_objects) {
     do.call(rbind, ylist)
 }
 sim1 <- generate(design[1, ], fixed_objects = fixed)
-
 
 # Analysis
 analyze <- function(condition, dat, fixed_objects) {
@@ -166,7 +157,6 @@ evaluate <- function(condition, results, fixed_objects) {
         emp_mad = apply(results, 2, mad)
     )
 }
-
 out <- runSimulation(design,
     replications = 1000,
     parallel = TRUE,
