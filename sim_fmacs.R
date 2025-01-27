@@ -6,8 +6,6 @@ library(pinsearch)
 design <- createDesign(
     n = c(100, 250, 1000)
 )
-
-# Fixed objects
 set.seed(1855)
 # Helper
 get_ucov <- function(p, scale = sqrt(0.1), n = 5) {
@@ -16,6 +14,7 @@ get_ucov <- function(p, scale = sqrt(0.1), n = 5) {
     D <- diag(1 / sqrt(diag(WtW))) * scale
     D %*% WtW %*% D
 }
+# Fixed objects
 fixed <- list(
     p = 6,
     lambda = c(.3, .7, .4, .5, .6, .4) + .3,
@@ -63,7 +62,6 @@ fixed <- within(fixed, {
                     lam = lambdag, al = alpha, nu = nug,
                     SIMPLIFY = FALSE)
 })
-
 # Population reliability
 fixed <- within(fixed, {
     comprel <- mapply(
@@ -74,14 +72,12 @@ fixed <- within(fixed, {
         SIMPLIFY = FALSE
     )
 })
-
 # Population effect size
 fixed$fmacs_pop <- local({
     pooled_sd <- lapply(fixed$covy, FUN = \(x) diag(x)) |>
         do.call(what = rbind) |>
         colMeans() |>
         sqrt()
-
     fmacs(
         intercepts = do.call(rbind, fixed$nug),
         loadings = do.call(rbind, fixed$lambdag),
@@ -90,7 +86,6 @@ fixed$fmacs_pop <- local({
         pooled_item_sd = pooled_sd
     )
 })[1:2]
-
 # Function for data generation
 # sim_y <- function(n, lambda, nu, alpha, psi, Theta) {
 #     covy <- tcrossprod(lambda) * psi + Theta
@@ -112,7 +107,6 @@ generate <- function(condition, fixed_objects) {
 }
 sim1 <- generate(design[1, ], fixed_objects = fixed)
 
-
 # Analysis
 analyze <- function(condition, dat, fixed_objects) {
     # Define lavaan syntax
@@ -132,7 +126,6 @@ analyze <- function(condition, dat, fixed_objects) {
     )
     as.vector(pinsearch::pin_effsize(pinv_fit))
 }
-
 analyze_bc <- function(condition, dat, fixed_objects) {
     # Define lavaan syntax
     pinv_fit <- cfa(
@@ -156,7 +149,6 @@ analyze_bc <- function(condition, dat, fixed_objects) {
     )
     pmax(0, 2 * f_orig - colMeans(f_boot, na.rm = TRUE))
 }
-
 analyze_bc2 <- function(condition, dat, fixed_objects) {
     # Define lavaan syntax
     pinv_fit <- cfa(
@@ -175,7 +167,6 @@ analyze_bc2 <- function(condition, dat, fixed_objects) {
     f2_bias <- (ng - 1) / ng * sum(1 / ns)
     sqrt(pmax(0, f_orig^2 - f2_bias))
 }
-
 # Evaluate/Summarize
 evaluate <- function(condition, results, fixed_objects) {
     c(
@@ -186,7 +177,6 @@ evaluate <- function(condition, results, fixed_objects) {
         emp_mad = apply(results, 2, mad)
     )
 }
-
 out <- runSimulation(design,
     replications = 1000,
     parallel = TRUE,
