@@ -1,13 +1,14 @@
 # Example 2: Computing Effect Sizes for Noninvariance With Multiple
 Grouping Variables
 
-2025-01-08
+2025-01-26
 
 ## Load Data
 
 ``` r
+# Data from https://osf.io/wxjsg
 orig_dat <- haven::read_sav(
-    here::here("analysis", "LUI2018_class4mplus.sav")
+    here::here("LUI2018_class4mplus.sav")
 )
 dat <- orig_dat |>
     filter(eth %in% c(1, 2, 4), gender %in% 1:2) |>
@@ -81,7 +82,8 @@ anova(config_fit, config_fit2)
     ---
     Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
-Forward search (similar to Yoon and Millsap 2007)
+Forward search (similar to Yoon and Millsap 2007); this takes several
+minutes to run.
 
 ``` r
 ps <- pinSearch(paste0(config_mod, "\nclass1 ~~ class2"), data = dat,
@@ -93,29 +95,29 @@ ps <- pinSearch(paste0(config_mod, "\nclass1 ~~ class2"), data = dat,
 knitr::kable(ps[[2]])
 ```
 
-| lhs     | rhs     | group | type       |
-|:--------|:--------|------:|:-----------|
-| class14 |         |     4 | intercepts |
-| class1  |         |     4 | intercepts |
-| class2  |         |     2 | intercepts |
-| class2  |         |     3 | intercepts |
-| class4  |         |     6 | intercepts |
-| class4  |         |     5 | intercepts |
-| class8  |         |     5 | intercepts |
-| class4  |         |     2 | intercepts |
-| class7  |         |     5 | intercepts |
-| class3  |         |     5 | intercepts |
-| class7  |         |     2 | intercepts |
-| class5  |         |     6 | intercepts |
-| class6  | class6  |     1 | residuals  |
-| class14 | class14 |     1 | residuals  |
-| class11 | class11 |     3 | residuals  |
-| class6  | class6  |     3 | residuals  |
-| class14 | class14 |     2 | residuals  |
-| class14 | class14 |     5 | residuals  |
-| class15 | class15 |     1 | residuals  |
+| group | lhs     | rhs     | type       |
+|------:|:--------|:--------|:-----------|
+|     4 | class14 |         | intercepts |
+|     4 | class1  |         | intercepts |
+|     2 | class2  |         | intercepts |
+|     3 | class2  |         | intercepts |
+|     6 | class4  |         | intercepts |
+|     5 | class4  |         | intercepts |
+|     5 | class8  |         | intercepts |
+|     2 | class4  |         | intercepts |
+|     5 | class7  |         | intercepts |
+|     5 | class3  |         | intercepts |
+|     2 | class7  |         | intercepts |
+|     6 | class5  |         | intercepts |
+|     1 | class6  | class6  | residuals  |
+|     1 | class14 | class14 | residuals  |
+|     3 | class11 | class11 | residuals  |
+|     3 | class6  | class6  | residuals  |
+|     2 | class14 | class14 | residuals  |
+|     5 | class14 | class14 | residuals  |
+|     1 | class15 | class15 | residuals  |
 
-Parameter Estiamtes
+Parameter Estimates
 
 Group labels:
 
@@ -209,7 +211,7 @@ lavInspect(ps[[1]], what = "est") |>
 | class10 | 1.016 | 1.016 | 1.016 | 1.016 | 1.016 | 1.016 |
 | class11 | 0.618 | 0.618 | 0.955 | 0.618 | 0.618 | 0.618 |
 | class12 | 0.734 | 0.734 | 0.734 | 0.734 | 0.734 | 0.734 |
-| class13 | 0.845 | 0.845 | 0.845 | 0.845 | 0.845 | 0.845 |
+| class13 | 0.846 | 0.846 | 0.846 | 0.846 | 0.846 | 0.846 |
 | class14 | 0.497 | 1.215 | 0.757 | 0.757 | 1.069 | 0.757 |
 | class15 | 1.272 | 0.956 | 0.956 | 0.956 | 0.956 | 0.956 |
 
@@ -222,30 +224,30 @@ Uniqueness Estimates
 (f_omni <- pin_effsize(ps[[1]]))
 ```
 
-           class1-f1 class2-f1 class3-f1 class4-f1  class5-f1  class7-f1  class8-f1
-    fmacs 0.09924505  0.102095 0.0724822 0.1104432 0.05987647 0.07737038 0.08807235
+          class1-f1 class2-f1  class3-f1 class4-f1  class5-f1 class7-f1  class8-f1
+    fmacs 0.0992441 0.1020962 0.07248248  0.110443 0.05987566 0.0773709 0.08807182
           class14-f1
-    fmacs  0.1451994
+    fmacs  0.1451998
 
 ``` r
 # fmacs by gender
 (f_gender <- pin_effsize(ps[[1]], group_factor = c(1, 1, 1, 2, 2, 2)))
 ```
 
-           class1-f1  class2-f1  class3-f1  class4-f1  class5-f1  class7-f1
-    fmacs 0.03002953 0.07919739 0.02977268 0.03763588 0.02669982 0.00183417
+           class1-f1  class2-f1 class3-f1  class4-f1  class5-f1   class7-f1
+    fmacs 0.03002924 0.07919834 0.0297728 0.03763601 0.02669946 0.001833995
            class8-f1 class14-f1
-    fmacs 0.03617647 0.04393436
+    fmacs 0.03617625 0.04393448
 
 ``` r
 # fmacs by ethnicity
 (f_eth <- pin_effsize(ps[[1]], group_factor = c(1, 2, 3, 1, 2, 3)))
 ```
 
-           class1-f1  class2-f1  class3-f1  class4-f1  class5-f1  class7-f1
-    fmacs 0.04839854 0.06392752 0.04181936 0.08905546 0.03558989 0.07382359
+           class1-f1 class2-f1  class3-f1  class4-f1  class5-f1  class7-f1
+    fmacs 0.04839808 0.0639283 0.04181952 0.08905502 0.03558941 0.07382416
            class8-f1 class14-f1
-    fmacs 0.05081425 0.07080895
+    fmacs 0.05081395 0.07080914
 
 ``` r
 # interaction (using contrast matrix)
@@ -259,10 +261,10 @@ contr <- local({
 (f_int <- pin_effsize(ps[[1]], contrast = contr[, 5:6, drop = FALSE]))
 ```
 
-           class1-f1  class2-f1  class3-f1  class4-f1  class5-f1   class7-f1
-    fmacs 0.04839854 0.06392752 0.04181936 0.04569251 0.03558989 0.002576316
+           class1-f1 class2-f1  class3-f1  class4-f1  class5-f1   class7-f1
+    fmacs 0.04839808 0.0639283 0.04181952 0.04569283 0.03558941 0.002576069
            class8-f1 class14-f1
-    fmacs 0.05081425 0.07080895
+    fmacs 0.05081395 0.07080914
 
 Bootstrapping
 
@@ -284,7 +286,7 @@ ps_boot <- bootstrapLavaan(ps_refit,
         pin_effsize(x, contrast = contr[, 5:6, drop = FALSE])
     )
 )
-saveRDS(ps_boot, here::here("analysis", "ex2_ps_boot.rds"))
+saveRDS(ps_boot, here::here("ex2_ps_boot.rds"))
 ```
 
 ``` r
@@ -381,7 +383,7 @@ pin_effsize(ps[[1]], item_weights = rep(1, 15))
 ```
 
             item_sum
-    fmacs 0.09783012
+    fmacs 0.09783036
 
 ``` r
 # Bootstrap
@@ -391,7 +393,7 @@ pstest_boot <- bootstrapLavaan(ps_refit,
         pin_effsize(x, item_weights = rep(1, 15))
     )
 )
-saveRDS(pstest_boot, here::here("analysis", "ex2_pstest_boot.rds"))
+saveRDS(pstest_boot, here::here("ex2_pstest_boot.rds"))
 ```
 
 ``` r
@@ -421,7 +423,7 @@ boot::boot.ci(
 
     Intervals : 
     Level      Normal              Basic              Percentile     
-    95%   ( 0.0729,  0.1168 )   ( 0.0737,  0.1173 )   ( 0.0783,  0.1220 )  
+    95%   ( 0.0713,  0.1184 )   ( 0.0690,  0.1169 )   ( 0.0788,  0.1267 )  
     Calculations and Intervals on Original Scale
     Some basic intervals may be unstable
     Some percentile intervals may be unstable

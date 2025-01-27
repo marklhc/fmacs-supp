@@ -1,7 +1,7 @@
 ---
 title: "Example 2: Computing Effect Sizes for Noninvariance With Multiple Grouping Variables"
 date: last-modified
-bibliography: ../manuscript/references.yaml
+bibliography: references.yaml
 format: gfm
 ---
 
@@ -11,13 +11,14 @@ library(haven)
 library(dplyr)
 library(modelsummary)
 library(lavaan)
-# remotes::install_github("marklhc/pinsearch", ref = "contrast")
+# remotes::install_github("marklhc/pinsearch")
 library(pinsearch)
 ```
 
 ## Load Data
 
 ```{r}
+# Data from https://osf.io/wxjsg
 orig_dat <- haven::read_sav(
     here::here("LUI2018_class4mplus.sav")
 )
@@ -70,7 +71,7 @@ if (!file.exists(config_path)) {
 }
 ```
 
-Forward search [similar to @yoon2007]
+Forward search [similar to @yoon2007]; this takes several minutes to run.
 
 ```{r}
 #| echo: true
@@ -87,7 +88,7 @@ if (!file.exists(ps_path)) {
     ps <- pinSearch(paste0(config_mod, "\nclass1 ~~ class2"), data = dat,
                 group = "group", estimator = "MLR", missing = "fiml",
                 type = "residual.covariances",
-                progress = TRUE, inv_test = "lrt", control_fdr = TRUE)
+                progress = TRUE)
     saveRDS(ps, ps_path)
 } else {
     ps <- readRDS(ps_path)
@@ -98,7 +99,7 @@ if (!file.exists(ps_path)) {
 knitr::kable(ps[[2]])
 ```
 
-Parameter Estiamtes
+Parameter Estimates
 
 Group labels:
 
