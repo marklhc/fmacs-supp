@@ -13,6 +13,6 @@ Supplemental materials for manuscript on fmacs
 - Simulation
     * [Summary](sim.pdf)
     * Source code
-        * <sim_dmacs.R>
-        * <sim_fmacs.R>
-        * <sim_fmacs_cat.R>
+        * [Continuous indicators, two groups](sim_dmacs.R)
+        * [Continuous, four groups](sim_fmacs.R)
+        * [Ordinal, four groups](sim_fmacs_cat.R)
