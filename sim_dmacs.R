@@ -2,9 +2,6 @@ library(SimDesign)
 library(lavaan)
 library(pinsearch)
 
-# TODO:
-#   - Summarize the pattern of bias
-
 # Define conditions
 design <- createDesign(
     n = c(100, 250, 1000)
