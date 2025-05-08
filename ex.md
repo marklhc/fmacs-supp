@@ -14,13 +14,16 @@ library(readr)
 library(here)
 library(sirt)
 library(lavaan)
+# remotes::install_github("marklhc/pinsearch")
 library(pinsearch)
 ```
 
 ## Import Data
 
 ``` r
-# Analyses from Asparouhov & Muthen (2014); data from https://www.statmodel.com/Alignment.shtml
+# Analyses from Asparouhov & Muthen (2014); 
+# data from https://www.statmodel.com/Alignment.shtml
+# unzip to get "ess05Traco.dat".
 traco_dat <- readr::read_delim(
     here::here("webnote18data", "ess05Traco.dat"),
     col_names = c(
@@ -584,6 +587,9 @@ aligned_res <- invariance.alignment(
                  ncol = config_res$I),
     fixed = FALSE
 )
+```
+
+``` r
 # Aligned loadings
 aligned_res$lambda.aligned |> round(digits = 4)
 ```
